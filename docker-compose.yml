@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  db:
+    image: gvenzl/oracle-free:latest
+    container_name: hospital_db
+    environment:
+      - ORACLE_PASSWORD=AdminHospital123!
+    ports:
+      - "1523:1521"
+    volumes:
+      - oracle_data:/opt/oracle/oradata
+
+  backend:
+    build: ./backend
+    container_name: hospital_backend
+    ports:
+      - "8080:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - db
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build: ./frontend
+    container_name: hospital_frontend
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./frontend:/app
+      # El volumen anónimo para node_modules evita que la carpeta local vacía sobrescriba la del contenedor
+      - /app/node_modules
+    depends_on:
+      - backend
+    command: npm start -- --host 0.0.0.0 --poll 2000
+
+volumes:
+  oracle_data:
